@@ -295,7 +295,7 @@ tags:
       /api/v3/shipment?viewpoint=all&limit=10&page=1&sort=create_date |
 
 
-      ## **2.4. Print Label - ปริ้นใบปะหน้า 4x3**
+      **2.4. Print Label - ปริ้นใบปะหน้า 4x3**
 
 
       |  | **Method** | **Host** | **Path** |
@@ -309,7 +309,7 @@ tags:
       /api/v3/shipment/print |
 
 
-      ## **2.5. Check Price - ตรวจสอบราคาก่อนขอ Tracking**
+      **2.5. Check Price - ตรวจสอบราคาก่อนขอ Tracking**
 
 
       |  | **Method** | **Host** | **Path** |
@@ -323,7 +323,7 @@ tags:
       /v3/shipment/check-price |
   - name: V3 - Open API > Wallet
     description: >-
-      ## **Wallet - เติมเครดิต**
+      **Wallet - เติมเครดิต**
 
 
       |  | **Method** | **Host** | **Path** |
@@ -335,7 +335,7 @@ tags:
       | PreProd - UAT | POST | https://{uat-api-endpoint-url} | /api/v3/wallet |
 
 
-      ## **Request Body** Wallet Deposit - เติมเงินเครดิต
+      **Request Body** Wallet Deposit - เติมเงินเครดิต
 
 
       | Name ( Parameter ) | Optional | Type | Description |
@@ -353,7 +353,7 @@ tags:
       ชำระเงินผ่านธนาคาร |
 
 
-      ## **Response Status Code**
+      **Response Status Code**
 
 
       | Status Code | Description |
@@ -365,7 +365,7 @@ tags:
       | 400 | ERROR_VALIDATION |
 
 
-      ## **Response Body** Wallet Transactions - ประวัติการเคลื่อนไหวของบัญชี
+      **Response Body** Wallet Transactions - ประวัติการเคลื่อนไหวของบัญชี
 
 
       | Name ( Parameter ) | Optional | Type | Description |
@@ -386,7 +386,7 @@ tags:
       https://{api-endpoint-url}/api/v3/wallet
 
 
-      ## **Response Status Code**
+      **Response Status Code**
 
 
       | Status Code | Description |
@@ -398,7 +398,7 @@ tags:
       | 400 | ERROR_VALIDATION |
   - name: V3 - Open API > Carrier
     description: >-
-      ## **Carrier - ขนส่ง**
+      **Carrier - ขนส่ง**
 
 
       |  | **Method** | **Host** | **Path** |
@@ -411,7 +411,7 @@ tags:
       /api/v3/carrier/list |
 
 
-      ## **Response Status Code**
+      **Response Status Code**
 
 
       | Status Code | Description |
@@ -423,7 +423,7 @@ tags:
       | 400 | ERROR_VALIDATION |
 
 
-      ## **Response Body:** **Carrier - ขนส่ง**
+      **Response Body:** **Carrier - ขนส่ง**
 
 
       | Name ( Parameter ) | Type | Description |
@@ -439,7 +439,7 @@ tags:
       | code | string | รหัสขนส่ง |
   - name: V3 - Open API > Pickup - เรียกรถเข้ารับ
     description: >-
-      ## **Create - ส่งคำสั่งเรียกรถเข้ารับ**
+      **Create - ส่งคำสั่งเรียกรถเข้ารับ**
 
 
       |  | **Method** | **Host** | **Path** |
@@ -451,7 +451,7 @@ tags:
       | PreProd - UAT | POST | https://{uat-api-endpoint-url} | /api/v3/pickup |
 
 
-      ## **Response Status Code**
+      **Response Status Code**
 
 
       | Status Code | Description |
@@ -463,7 +463,7 @@ tags:
       | 400 | ERROR_VALIDATION |
 
 
-      ## **Request body:** **Pickup create - ส่งคำสั่งเรียกรถเข้ารับ**
+      **Request body:** **Pickup create - ส่งคำสั่งเรียกรถเข้ารับ**
 
 
       | Name ( Parameter ) | Type | Description |
@@ -491,7 +491,7 @@ tags:
       | estimate_parcel | int | จำนวนพัสดุ (ค่าเริ่มต้น = 1) |
 
 
-      ## **Cancel - ยกเลิกคำสั่งเรียกรถเข้ารับ**
+      **Cancel - ยกเลิกคำสั่งเรียกรถเข้ารับ**
 
 
       |  | **Method** | **Host** | **Path** |
@@ -505,7 +505,7 @@ tags:
       /api/v3/pickup/{pickup_id}/cancel |
 
 
-      ## **Response Status Code**
+      **Response Status Code**
 
 
       | Status Code | Description |
