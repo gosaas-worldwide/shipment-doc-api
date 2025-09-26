@@ -1,6 +1,38 @@
 openapi: 3.0.0
 info:
-  title: Shipment Open API
+  title: Shipment Open API V3
+  description: |-
+    - Shipment Open API (V3.0.1) Last update 2024-10-01
+        
+    - Shipment Open API (V3.0.2) Last update 2024-11-19
+        
+    - Shipment Open API (V3.0.3) Last update 2024-11-22
+        
+        - เพิ่ม ประกันขนส่ง Thailandpost (ปณ)
+            
+    - Shipment Open API (V3.0.4) Last update 2024-11-22
+        
+        - เพิ่ม 3 ข่นส่งใหม่ดังนี้ Flash Express / Kerry / SPX / J&T
+            
+    - Shipment Open API (V3.0.5) Last update 2025-01-20
+        
+        - เพิ่ม 2 ข่นส่งใหม่ดังนี้ DHL Express (ECO and Next Day) / BS Express
+            
+        - เพิ่ม Endpoint Get carrier => /api/v3/carrier/list
+            
+        - เพิ่ม Endpoint Check price => /api/v3/check-price
+            
+    - Shipment Open API (V3.0.6) Last update 2025-04-20
+        
+        - เพิ่ม Endpoint Pickup เฉพาะ Flash Express (เรียกรถเข้ารับและยกเลิกคำสั่งเรียกรถเข้ารับ)
+            
+        - เรียกรถเข้ารับ => /api/v3/pickup
+            
+        - ยกเลิกเรียกรถเข้ารับ => api/v3/pickup/{{pickup_id}}/cancel
+            
+    - Shipment Open API (V3.0.7) Last update 2025-09-20
+        
+        - เพิ่ม Endpoint Check Address (ตรวจสอบที่อยู่) => /api/v3/shipment/check-address
   version: 1.0.0
 servers:
   - url: http://{{v3_api_url}}
@@ -10,53 +42,333 @@ components:
       type: http
       scheme: bearer
 tags:
-  - name: V3 - Open API
-    description: |-
-      - Shipment Open API (V3.0.1) Last update 2024-10-01
-          
-      - Shipment Open API (V3.0.2) Last update 2024-11-19
-          
-      - Shipment Open API (V3.0.3) Last update 2024-11-22
-          
-          - เพิ่ม ประกันขนส่ง Thailandpost (ปณ)
-              
-      - Shipment Open API (V3.0.4) Last update 2024-11-22
-          
-          - เพิ่ม 3 ข่นส่งใหม่ดังนี้ Flash Express / Kerry / SPX / J&T
-              
-      - Shipment Open API (V3.0.5) Last update 2025-01-20
-          
-          - เพิ่ม 2 ข่นส่งใหม่ดังนี้ DHL Express (ECO and Next Day) / BS Express
-              
-          - เพิ่ม Endpoint Get carrier => /api/v3/carrier/list
-              
-          - เพิ่ม Endpoint Check price => /api/v3/check-price
-              
-      - Shipment Open API (V3.0.6) Last update 2025-04-20
-          
-          - เพิ่ม Endpoint Pickup เฉพาะ Flash Express (เรียกรถเข้ารับและยกเลิกคำสั่งเรียกรถเข้ารับ)
-  - name: V3 - Open API > Overview - ภาพรวม
+  - name: Overview - ภาพรวม
     description: >-
       <img
       src="https://content.pstmn.io/1a2765ab-0f54-4aa3-80dc-15ada0251877/aW1hZ2UucG5n"
       width="787" height="689">
-  - name: V3 - Open API > Merchant - จัดการร้านค้า
+
+
+      ---
+
+
+      # **สรุปขั้นตอนการสร้าง HMAC Signature สำหรับ API**
+
+
+      ---
+
+
+      # 1.Import และดึงค่า Environment
+
+
+      ``` javascript
+
+      require('crypto-js')
+
+      let key = pm.environment.get("V3_MERCHANT_APP_ID");
+
+      let secret = pm.environment.get("V3_MERCHANT_SECRET");
+
+       ```
+
+      - `crypto-js` → ใช้สำหรับ **เข้ารหัส HMAC-SHA256**
+          
+      - ดึงค่าจาก **Postman Environment**:
+          
+          - `key` → App ID
+              
+          - `secret` → Secret key ของ Merchant
+              
+
+      **แนวทางภาษาอื่น**:
+
+
+      - Python → ใช้ `import hashlib, hmac, base64`
+          
+      - Go → ใช้ `crypto/hmac` + `crypto/sha256`
+          
+      - Java → ใช้ `javax.crypto.Mac` + `SecretKeySpec`
+          
+
+      ---
+
+
+      # 2\. สร้าง Timestamp และ Key ใหม่
+
+
+      ``` javascript
+
+      let timestamp = new Date().getTime();
+
+      key = btoa(timestamp + "-" + key)
+
+       ```
+
+      - `timestamp` → เวลาเป็น **milliseconds** ตั้งแต่ epoch
+          
+      - `key` → Base64 encode ของ `${timestamp}-${key}`
+          
+          - ตัวอย่าง: `"1695743100000-abc123"` → encode เป็น Base64
+              
+      - ใช้เพื่อ **เพิ่มความปลอดภัย และ prevent replay attack**
+          
+
+      **ภาษาอื่น**:
+
+
+      - Python: `base64.b64encode(f"{timestamp}-{key}".encode()).decode()`
+          
+      - Go: `base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d-%s",
+      timestamp, key)))`
+          
+
+      ---
+
+
+      # 3\. ดึง Query Parameters จาก Request
+
+
+      ``` javascript
+
+      let query = {}
+
+      // ดึงข้อมูล query string ทั้งหมด
+
+      pm.request.url.query.all().forEach((param) => {
+          if(param.disabled === true) return
+          let value = param.value
+          if (pm.environment.get(param.value.replace('{{', '').replace('}}', '')) !== undefined) {
+              value = pm.environment.get(param.value.replace('{{', '').replace('}}', ''))
+          }
+          if (!query.hasOwnProperty(param.key)) {
+              query[param.key] = value
+          } else {
+              if(!Array.isArray(query[param.key])) query[param.key] = [query[param.key]]
+              query[param.key] = [...query[param.key], value]
+          }
+      })
+
+       ```
+
+      - สร้าง **Object query** จาก **URL query string**
+          
+      - ตรวจสอบว่ามี **Environment Variable** ให้ replace ค่า `{{var}}`
+          
+      - รองรับ **ค่า Array** → ถ้า query มีหลายค่า key เดียวกัน จะรวมเป็น array
+          
+
+      **ภาษาอื่น**:
+
+
+      - Python → ใช้ `dict` และ `urllib.parse.parse_qs(url.query)`
+          
+      - Go → ใช้ `url.Values` (`map[string][]string`)
+          
+      - Java → ใช้ `Map>` + `URLEncodedUtils.parse()`
+          
+
+      ---
+
+
+      # 4\. รวม key, timestamp เข้า query
+
+
+      ``` javascript
+
+      query = {
+          ...query, ...{
+              key: key,
+              timestamp: timestamp,
+          }
+      }
+
+       ```
+
+      - รวม `key` และ `timestamp` ลงใน query object
+          
+      - ใช้เพื่อเป็น **ส่วนของ signature base string**
+          
+
+      ---
+
+
+      # 5\. สร้าง Base String สำหรับ HMAC
+
+
+      ``` javascript
+
+      let baseString = `secret=${secret}`
+
+      // เรียงลำดับ key A-Z
+
+      for (const key of Object.keys(query).sort()) {
+          if (Array.isArray(query[key])) {
+              for (const value of query[key]) {
+                  baseString += `${key}=${value}`
+              }
+          } else {
+              baseString += `${key}=${query[key]}`
+          }
+      }
+
+       ```
+
+      - Base String เริ่มด้วย `secret=xxx`
+          
+      - ตามด้วย **key=value** ของ query ทุกตัว **เรียงลำดับ A-Z**
+          
+      - ถ้า value เป็น array → append ทุกค่า
+          
+      - Base String ตัวนี้คือ **ข้อมูลที่ใช้สร้าง HMAC signature**
+          
+
+      **ภาษาอื่น**:
+
+
+      - Python → ใช้ `sorted(dict.keys())` + loop
+          
+      - Go → sort slice ของ keys
+          
+      - Java → TreeMap จะเรียง key อัตโนมัติ
+          
+
+      ---
+
+
+      # 6\. สร้าง HMAC Signature
+
+
+      ``` javascript
+
+      let hmac = CryptoJS.HmacSHA256(baseString, secret)
+
+      let signature = hmac.toString(CryptoJS.digest)
+
+       ```
+
+      - ใช้ **HMAC-SHA256** กับ `secret` key
+          
+      - Output เป็น **Hex string** (บางระบบใช้ Base64 → ปรับได้ตาม requirement)
+          
+
+      **ภาษาอื่น**:
+
+
+      - Python:
+          
+
+      ``` python
+
+      import hmac, hashlib
+
+      signature = hmac.new(secret.encode(), baseString.encode(),
+      hashlib.sha256).hexdigest()
+
+       ```
+
+      - Go:
+          
+
+      ``` go
+
+      import "crypto/hmac"
+
+      import "crypto/sha256"
+
+      import "encoding/hex"
+
+      mac := hmac.New(sha256.New, []byte(secret))
+
+      mac.Write([]byte(baseString))
+
+      signature := hex.EncodeToString(mac.Sum(nil))
+
+       ```
+
+      - Java:
+          
+
+      ``` java
+
+      Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+
+      SecretKeySpec secret_key = new SecretKeySpec(secret.getBytes(),
+      "HmacSHA256");
+
+      sha256_HMAC.init(secret_key);
+
+      String signature = bytesToHex(sha256_HMAC.doFinal(baseString.getBytes()));
+
+       ```
+
+      ---
+
+
+      # 7\. เพิ่ม key, timestamp, signature เข้า URL
+
+
+      ``` javascript
+
+      pm.request.url.query.add(`key=${key}`)
+
+      pm.request.url.query.add(`timestamp=${timestamp}`)
+
+      pm.request.url.query.add(`signature=${signature}`)
+
+       ```
+
+      - เพิ่ม query parameters ใหม่สำหรับ **API authentication**
+          
+      - API ปลายทางจะตรวจสอบ `key, timestamp, signature` เพื่อความปลอดภัย
+          
+
+      **ภาษาอื่น**:
+
+
+      - Python → append query dict + `requests.get(url, params=query)`
+          
+      - Go → `url.Values.Add()`
+          
+      - Java → ใช้ `URIBuilder` + `addParameter()`
+          
+
+      ---
+
+
+      # **Summary Concept**
+
+
+      1. ดึงค่าจาก environment → `key`, `secret`
+          
+      2. สร้าง `timestamp` และ Base64 encode key
+          
+      3. ดึง query params → ทำเป็น Object / Dictionary
+          
+      4. รวม key + timestamp เข้ากับ query params
+          
+      5. สร้าง **Base String** → เรียง key A-Z, join key=value
+          
+      6. ทำ **HMAC-SHA256** กับ `secret` → ได้ `signature`
+          
+      7. เพิ่ม `key, timestamp, signature` เข้า URL → ส่ง request
+  - name: Merchant - จัดการร้านค้า
     description: >-
       Partner สามารถสร้างร้านค้า (Merchant) ภายใต้ Partner Account
       ของตัวเองได้มากกว่า 1 ร้านค้า (ถ้าต้องการ) สำหรับ API
       นี้จะเป็นจัดการร้านค้า (Merchant)
-  - name: V3 - Open API > Shipment - รายการจัดส่ง
+  - name: Shipment - รายการจัดส่ง
     description: >-
       Merchat สามารถสร้างรายการจัดส่ง (Shipment) ภายใต้ Merchant ของตัวเองได้จาก
       API Create Shipmnet
-  - name: V3 - Open API > Wallet
-  - name: V3 - Open API > Carrier
-  - name: V3 - Open API > Pickup - เรียกรถเข้ารับ
+  - name: Wallet
+    description: แจ้งเติมเครดิตและประวัติการเคลื่อนไหวของบัญชี
+  - name: Carrier
+  - name: Pickup - เรียกรถเข้ารับ
 paths:
   /api/v3/merchant:
     post:
       tags:
-        - V3 - Open API > Merchant - จัดการร้านค้า
+        - Merchant - จัดการร้านค้า
       summary: Create Merchant- สร้างร้านค้าใหม่
       description: >-
         **Create Merchant - สร้างร้านค้าใหม่**
@@ -533,7 +845,7 @@ paths:
   /api/v3/shipment:
     post:
       tags:
-        - V3 - Open API > Shipment - รายการจัดส่ง
+        - Shipment - รายการจัดส่ง
       summary: Create Shipment - สร้างรายการจัดส่ง
       description: >-
         **Create Shipment - สร้างรายการจัดส่ง**
@@ -569,6 +881,11 @@ paths:
         | Flash Express | FLASH_EXPRESS_SP |  |
 
 
+        **\* สามารถใช้ Get Carrier List สำหรับดู Carrier ทั้งหมดในระบบได้**\*  
+
+        /api/v3/carrier/list?limit=25
+
+
         **Request Body**
 
 
@@ -597,7 +914,7 @@ paths:
 
         | **origin** |  |  | ที่อยู่ต้นทาง |
 
-        | \- fullname | required | string | ชื่อ |
+        | \- fullname | required | string | ชื่อ-นามสกุล |
 
         | \- address | required | string | ที่อยู่ |
 
@@ -617,7 +934,7 @@ paths:
 
         | **destination** |  |  | ที่อยู่ปลายทาง |
 
-        | \- fullname | required | string | ขื่อ |
+        | \- fullname | required | string | ขื่อ-นามสกุล |
 
         | \- address | required | string | ที่อยู่ |
 
@@ -685,15 +1002,15 @@ paths:
             schema:
               type: object
               example:
-                carrier_code: SHOPEE_EXPRESS
+                carrier_code: FLASH_EXPRESS_SP
                 box_width: 1
                 box_height: 1
                 box_length: 1
                 box_weight: 300
-                cod_account: 36713
+                cod_account: 8
                 cod_amount: 0
                 reference_no: '9264815'
-                external_id: gkbdev-926481-3763336
+                external_id: gkbdev-926481-3763333
                 origin:
                   fullname: โจวิน่า
                   address: ศรีนครินบางนา
@@ -706,10 +1023,10 @@ paths:
                 destination:
                   fullname: วรพล เนตรนิ่ม
                   address: '55/86 ม 3 แฮมิลตัน กาญจนาภิเษก บางใหญ่ '
-                  county: คลองขวาง
-                  city: ไทรน้อย
-                  state: นนทบุรี
-                  postcode: '11150'
+                  county: เกาะช้าง
+                  city: เกาะช้าง
+                  state: ตราด
+                  postcode: '23170'
                   email: noemail@gmail.com
                   telephone1: '0989602126'
                 products:
@@ -1026,7 +1343,7 @@ paths:
                 timestamp: '2024-09-17 03:28:54'
     get:
       tags:
-        - V3 - Open API > Shipment - รายการจัดส่ง
+        - Shipment - รายการจัดส่ง
       summary: list - แสดงรายการการจัดส่ง
       description: >-
         **List Shipment - แสดงรายการจัดส่ง**
@@ -1069,7 +1386,7 @@ paths:
 
         | page | Default = 1 | integer | Page |
 
-        | sort |  | string |  |
+        | sort |  | string | create_date |
 
         |  |  |  |  |
       parameters:
@@ -1859,7 +2176,7 @@ paths:
   /api/v3/shipment/print:
     post:
       tags:
-        - V3 - Open API > Shipment - รายการจัดส่ง
+        - Shipment - รายการจัดส่ง
       summary: Print Label - ปริ้นใบปะหน้า 4x3
       description: >-
         **Print Label - ปริ้นใบปะหน้า 4x3**
@@ -1896,6 +2213,8 @@ paths:
         | Name ( Parameter ) | Optional | Type | Description |
 
         | --- | --- | --- | --- |
+
+        | show_order |  | string | ค่ารายการสินค้า 0=ไม่,1=แสดง |
 
         | carrier_code | required | string | รหัสขนส่ง เช่น THAIPOST |
 
@@ -2065,7 +2384,7 @@ paths:
   /api/v3/shipment/cancel/EB858786110TH:
     put:
       tags:
-        - V3 - Open API > Shipment - รายการจัดส่ง
+        - Shipment - รายการจัดส่ง
       summary: Cancel - ยกเลิกการจัดส่ง
       description: >-
         **Cancel** **Shipment - ยกเลิกรายการจัดส่ง**
@@ -2077,11 +2396,11 @@ paths:
 
         | Production | PUT |
         [https://api.getshipment.co](https://api.getshipment.co) |
-        /api/v3/shipmentcancel/{TRACKING_NUMBER} |
+        /api/v3/shipment/cancel/{TRACKING_NUMBER} |
 
         | PreProd - UAT | PUT |
         [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
-        /api/v3/shipmentcancel/{TRACKING_NUMBER} |
+        /api/v3/shipment/cancel/{TRACKING_NUMBER} |
 
 
         **Example tracking number**
@@ -2246,8 +2565,23 @@ paths:
   /api/v3/shipment/check-price:
     post:
       tags:
-        - V3 - Open API > Shipment - รายการจัดส่ง
+        - Shipment - รายการจัดส่ง
       summary: Check Price - ตรวจสอบราคา
+      description: >-
+        **Check Price - ตรวจสอบราคา**
+
+
+        |  | **Method** | **Host** | **Path** |
+
+        | --- | --- | --- | --- |
+
+        | Production | GET |
+        [https://api.getshipment.co](https://api.getshipment.co) |
+        /api/v3/shipment/check-price |
+
+        | PreProd - UAT | GET |
+        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        /api/v3/shipment/check-price |
       requestBody:
         content:
           application/json:
@@ -2381,8 +2715,25 @@ paths:
   /api/v3/shipment/check-address:
     get:
       tags:
-        - V3 - Open API > Shipment - รายการจัดส่ง
+        - Shipment - รายการจัดส่ง
       summary: Check Address - ตรวจสอบที่อยู่
+      description: >-
+        **Check Address - ตรวจสอบที่อยู่**
+
+
+        |  | **Method** | **Host** | **Path** |
+
+        | --- | --- | --- | --- |
+
+        | Production | GET |
+        [https://api.getshipment.co](https://api.getshipment.co) |
+        /api/v3/shipment/check-address?postcode=64160&carrier_code=THAIPOST&limit=1000
+        |
+
+        | PreProd - UAT | GET |
+        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        /api/v3/shipment/check-address?postcode=64160&carrier_code=THAIPOST&limit=1000
+        |
       parameters:
         - name: postcode
           in: query
@@ -2410,9 +2761,25 @@ paths:
   /api/v3/wallet:
     post:
       tags:
-        - V3 - Open API > Wallet
+        - Wallet
       summary: Deposit Wallet - เติมเงินเครดิต
       description: >-
+        **Deposit Wallet - เติมเงินเครดิต**
+
+
+        |  | **Method** | **Host** | **Path** |
+
+        | --- | --- | --- | --- |
+
+        | Production | GET |
+        [https://api.getshipment.co](https://api.getshipment.co) |
+        /api/v3/wallet |
+
+        | PreProd - UAT | GET |
+        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        /api/v3/wallet |
+
+
         **Request Body**
 
 
@@ -2421,7 +2788,7 @@ paths:
         | --- | --- | --- | --- |
 
         | attachment | required | file | ไฟล์ Bank Payment Slip สำหรับ Upload
-        (รองรับ .jpg....) |
+        (รองรับ .jpg,png,pdf) |
 
         | amount | required | integer | จำนวนเงินการเติมเครดิต |
 
@@ -2590,26 +2957,55 @@ paths:
                 request_id: 1179c7d4d16b4230b193564ccba40045
     get:
       tags:
-        - V3 - Open API > Wallet
+        - Wallet
       summary: Transactions - ประวัติการเคลื่อนไหวของบัญชี
-      description: |-
+      description: >-
+        **Transactions - ประวัติการเคลื่อนไหวของบัญชี**
+
+
+        |  | **Method** | **Host** | **Path** |
+
+        | --- | --- | --- | --- |
+
+        | Production | GET |
+        [https://api.getshipment.co](https://api.getshipment.co) |
+        /api/v3/wallet |
+
+        | PreProd - UAT | GET |
+        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        /api/v3/wallet |
+
+
         **Response Body**
 
+
         | Name ( Parameter ) | Optional | Type | Description |
+
         | --- | --- | --- | --- |
+
         | date | required | array object |  |
+
         | links | required | object |  |
+
         | meta | required | object |  |
+
         | timestamp | required | string |  |
+
         | request_id | required | string |  |
+
 
         {{V3_API_URL}}/api/v3/wallet
 
+
         **Response Status Code**
 
+
         | Status Code | Description |
+
         | --- | --- |
-        | 200 | Cancel is successful. |
+
+        | 200 | Successful. |
+
         | 400 | ERROR_VALIDATION |
       responses:
         '200':
@@ -2705,8 +3101,35 @@ paths:
   /api/v3/carrier/list:
     get:
       tags:
-        - V3 - Open API > Carrier
-      summary: Get Carrier List
+        - Carrier
+      summary: Get Carrier List - แสดง Carrier ทั้งหมด
+      description: >-
+        **Get Carrier List - แสดง Carrier ทั้งหมด**
+
+
+        |  | **Method** | **Host** | **Path** |
+
+        | --- | --- | --- | --- |
+
+        | Production | GET |
+        [https://api.getshipment.co](https://api.getshipment.co) |
+        /api/v3/carrier/list?limit=25 |
+
+        | PreProd - UAT | GET |
+        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        /api/v3/carrier/list?limit=25 |
+
+
+        **Response Status Code**
+
+
+        | Status Code | Description |
+
+        | --- | --- |
+
+        | 200 | Successful. |
+
+        | 400 | ERROR_VALIDATION |
       parameters:
         - name: limit
           in: query
@@ -2800,8 +3223,63 @@ paths:
   /api/v3/pickup:
     post:
       tags:
-        - V3 - Open API > Pickup - เรียกรถเข้ารับ
+        - Pickup - เรียกรถเข้ารับ
       summary: Create - ส่งคำสั่งเรียกรถเข้ารับ
+      description: >-
+        **Create - ส่งคำสั่งเรียกรถเข้ารับ**
+
+
+        |  | **Method** | **Host** | **Path** |
+
+        | --- | --- | --- | --- |
+
+        | Production | GET |
+        [https://api.getshipment.co](https://api.getshipment.co) |
+        /api/v3/pickup |
+
+        | PreProd - UAT | GET |
+        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        /api/v3/pickup |
+
+
+        **Response Body**
+
+
+        | Name ( Parameter ) | Optional | Type | Description |
+
+        | --- | --- | --- | --- |
+
+        | carrier_code | required | string | "FLASH_EXPRESS_SP" |
+
+        | warehouse_no | required | string | เลขของ Warehouse "001" |
+
+        | fullname | required | string | ชื่อ-นามสกุล |
+
+        | address | required | string | ที่อยู่ |
+
+        | mobile | required | string | เบอร์มือถือ เช่น 888 หมู่ที่ 8 |
+
+        | county | required | string | เขต เช่น "หน้าไม้" |
+
+        | city | required | string | เมือง เช่น "ลาดหลุมแก้ว" |
+
+        | state | required | string | จังหวัด เช่น "ปทุมธานี" |
+
+        | postcode | required | string | รหัสไปรณีย์ เช่น "12140" |
+
+        | estimate_parcel | required | Integer | 10 |
+
+
+        **Response Status Code**
+
+
+        | Status Code | Description |
+
+        | --- | --- |
+
+        | 200 | Successful. |
+
+        | 400 | ERROR_VALIDATION |
       requestBody:
         content:
           application/json:
@@ -2826,8 +3304,35 @@ paths:
   /api/v3/pickup/{pickup_id}/cancel:
     put:
       tags:
-        - V3 - Open API > Pickup - เรียกรถเข้ารับ
+        - Pickup - เรียกรถเข้ารับ
       summary: Cancel - ยกเลิกคำสั่งเรียกรถเข้ารับ
+      description: >-
+        **Cancel - ยกเลิกคำสั่งเรียกรถเข้ารับ**
+
+
+        |  | **Method** | **Host** | **Path** |
+
+        | --- | --- | --- | --- |
+
+        | Production | GET |
+        [https://api.getshipment.co](https://api.getshipment.co) |
+        /api/v3/pickup/{{pickup_id}}/cancel |
+
+        | PreProd - UAT | GET |
+        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        /api/v3/pickup/{{pickup_id}}/cancel |
+
+
+        **Response Status Code**
+
+
+        | Status Code | Description |
+
+        | --- | --- |
+
+        | 200 | Successful. |
+
+        | 400 | ERROR_VALIDATION |
       requestBody:
         content: {}
       parameters:
