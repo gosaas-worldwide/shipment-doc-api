@@ -52,13 +52,13 @@ tags:
       ---
 
 
-      # **สรุปขั้นตอนการสร้าง HMAC Signature สำหรับ API**
+      ## **สรุปขั้นตอนการสร้าง HMAC Signature สำหรับ API**
 
 
       ---
 
 
-      ## 1. Import และดึงค่า Environment
+      ### 1) Import และดึงค่า Environment
 
 
       ``` javascript
@@ -93,7 +93,7 @@ tags:
       ---
 
 
-      ## 2. สร้าง Timestamp และ Key ใหม่
+      ### 2) สร้าง Timestamp และ Key ใหม่
 
 
       ``` javascript
@@ -125,7 +125,7 @@ tags:
       ---
 
 
-      ## 3. ดึง Query Parameters จาก Request 
+      ### 3) ดึง Query Parameters จาก Request 
 
 
       ``` javascript
@@ -170,7 +170,7 @@ tags:
       ---
 
 
-      ## 4. รวม key, timestamp เข้า query 
+      ### 4) รวม key, timestamp เข้า query 
 
 
       ``` javascript
@@ -192,7 +192,7 @@ tags:
       ---
 
 
-      ## 5. สร้าง Base String สำหรับ HMAC 
+      ### 5) สร้าง Base String สำหรับ HMAC 
 
 
       ``` javascript
@@ -235,7 +235,7 @@ tags:
       ---
 
 
-      ## 6. สร้าง HMAC Signature 
+      ### 6) สร้าง HMAC Signature 
 
 
       ``` javascript
@@ -304,7 +304,7 @@ tags:
       ---
 
 
-      ## 7. เพิ่ม key, timestamp, signature เข้า URL 
+      ### 7) เพิ่ม key, timestamp, signature เข้า URL 
 
 
       ``` javascript
@@ -335,7 +335,7 @@ tags:
       ---
 
 
-      # **Summary Concept**
+      ## **Summary Concept**
 
 
       1. ดึงค่าจาก environment → `key`, `secret`
