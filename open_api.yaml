@@ -33,7 +33,7 @@ info:
     - Shipment Open API (V3.0.7) Last update 2025-09-20
         
         - เพิ่ม Endpoint Check Address (ตรวจสอบที่อยู่) => /api/v3/shipment/check-address
-  version: 1.0.0
+  version: 3.0.7
 servers:
   - url: http://{{v3_api_url}}
 components:
