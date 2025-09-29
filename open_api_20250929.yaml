@@ -47,310 +47,6 @@ tags:
       <img
       src="https://content.pstmn.io/1a2765ab-0f54-4aa3-80dc-15ada0251877/aW1hZ2UucG5n"
       width="787" height="689">
-
-
-      ---
-
-
-      # **สรุปขั้นตอนการสร้าง HMAC Signature สำหรับ API**
-
-
-      ---
-
-
-      ## **1.Import และดึงค่า Environment**
-
-
-      ``` javascript
-
-      require('crypto-js')
-
-      let key = pm.environment.get("V3_MERCHANT_APP_ID");
-
-      let secret = pm.environment.get("V3_MERCHANT_SECRET");
-
-       ```
-
-      - `crypto-js` → ใช้สำหรับ **เข้ารหัส HMAC-SHA256**
-          
-      - ดึงค่าจาก **Postman Environment**:
-          
-          - `key` → App ID
-              
-          - `secret` → Secret key ของ Merchant
-              
-
-      **แนวทางภาษาอื่น**:
-
-
-      - Python → ใช้ `import hashlib, hmac, base64`
-          
-      - Go → ใช้ `crypto/hmac` + `crypto/sha256`
-          
-      - Java → ใช้ `javax.crypto.Mac` + `SecretKeySpec`
-          
-
-      ---
-
-
-      ## **2. สร้าง Timestamp และ Key ใหม่**
-
-
-      ``` javascript
-
-      let timestamp = new Date().getTime();
-
-      key = btoa(timestamp + "-" + key)
-
-       ```
-
-      - `timestamp` → เวลาเป็น **milliseconds** ตั้งแต่ epoch
-          
-      - `key` → Base64 encode ของ `${timestamp}-${key}`
-          
-          - ตัวอย่าง: `"1695743100000-abc123"` → encode เป็น Base64
-              
-      - ใช้เพื่อ **เพิ่มความปลอดภัย และ prevent replay attack**
-          
-
-      **ภาษาอื่น**:
-
-
-      - Python: `base64.b64encode(f"{timestamp}-{key}".encode()).decode()`
-          
-      - Go: `base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d-%s",
-      timestamp, key)))`
-          
-
-      ---
-
-
-      ## **3. ดึง Query Parameters จาก Request**
-
-
-      ``` javascript
-
-      let query = {}
-
-      // ดึงข้อมูล query string ทั้งหมด
-
-      pm.request.url.query.all().forEach((param) => {
-          if(param.disabled === true) return
-          let value = param.value
-          if (pm.environment.get(param.value.replace('{{', '').replace('}}', '')) !== undefined) {
-              value = pm.environment.get(param.value.replace('{{', '').replace('}}', ''))
-          }
-          if (!query.hasOwnProperty(param.key)) {
-              query[param.key] = value
-          } else {
-              if(!Array.isArray(query[param.key])) query[param.key] = [query[param.key]]
-              query[param.key] = [...query[param.key], value]
-          }
-      })
-
-       ```
-
-      - สร้าง **Object query** จาก **URL query string**
-          
-      - ตรวจสอบว่ามี **Environment Variable** ให้ replace ค่า `{{var}}`
-          
-      - รองรับ **ค่า Array** → ถ้า query มีหลายค่า key เดียวกัน จะรวมเป็น array
-          
-
-      **ภาษาอื่น**:
-
-
-      - Python → ใช้ `dict` และ `urllib.parse.parse_qs(url.query)`
-          
-      - Go → ใช้ `url.Values` (`map[string][]string`)
-          
-      - Java → ใช้ `Map>` + `URLEncodedUtils.parse()`
-          
-
-      ---
-
-
-      ## **4. รวม key, timestamp เข้า query**
-
-
-      ``` javascript
-
-      query = {
-          ...query, ...{
-              key: key,
-              timestamp: timestamp,
-          }
-      }
-
-       ```
-
-      - รวม `key` และ `timestamp` ลงใน query object
-          
-      - ใช้เพื่อเป็น **ส่วนของ signature base string**
-          
-
-      ---
-
-
-      ## **5. สร้าง Base String สำหรับ HMAC**
-
-
-      ``` javascript
-
-      let baseString = `secret=${secret}`
-
-      // เรียงลำดับ key A-Z
-
-      for (const key of Object.keys(query).sort()) {
-          if (Array.isArray(query[key])) {
-              for (const value of query[key]) {
-                  baseString += `${key}=${value}`
-              }
-          } else {
-              baseString += `${key}=${query[key]}`
-          }
-      }
-
-       ```
-
-      - Base String เริ่มด้วย `secret=xxx`
-          
-      - ตามด้วย **key=value** ของ query ทุกตัว **เรียงลำดับ A-Z**
-          
-      - ถ้า value เป็น array → append ทุกค่า
-          
-      - Base String ตัวนี้คือ **ข้อมูลที่ใช้สร้าง HMAC signature**
-          
-
-      **ภาษาอื่น**:
-
-
-      - Python → ใช้ `sorted(dict.keys())` + loop
-          
-      - Go → sort slice ของ keys
-          
-      - Java → TreeMap จะเรียง key อัตโนมัติ
-          
-
-      ---
-
-
-      ## **6. สร้าง HMAC Signature**
-
-
-      ``` javascript
-
-      let hmac = CryptoJS.HmacSHA256(baseString, secret)
-
-      let signature = hmac.toString(CryptoJS.digest)
-
-       ```
-
-      - ใช้ **HMAC-SHA256** กับ `secret` key
-          
-      - Output เป็น **Hex string** (บางระบบใช้ Base64 → ปรับได้ตาม requirement)
-          
-
-      **ภาษาอื่น**:
-
-
-      - Python:
-          
-
-      ``` python
-
-      import hmac, hashlib
-
-      signature = hmac.new(secret.encode(), baseString.encode(),
-      hashlib.sha256).hexdigest()
-
-       ```
-
-      - Go:
-          
-
-      ``` go
-
-      import "crypto/hmac"
-
-      import "crypto/sha256"
-
-      import "encoding/hex"
-
-      mac := hmac.New(sha256.New, []byte(secret))
-
-      mac.Write([]byte(baseString))
-
-      signature := hex.EncodeToString(mac.Sum(nil))
-
-       ```
-
-      - Java:
-          
-
-      ``` java
-
-      Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-
-      SecretKeySpec secret_key = new SecretKeySpec(secret.getBytes(),
-      "HmacSHA256");
-
-      sha256_HMAC.init(secret_key);
-
-      String signature = bytesToHex(sha256_HMAC.doFinal(baseString.getBytes()));
-
-       ```
-
-      ---
-
-
-      ## **7. เพิ่ม key, timestamp, signature เข้า URL**
-
-
-      ``` javascript
-
-      pm.request.url.query.add(`key=${key}`)
-
-      pm.request.url.query.add(`timestamp=${timestamp}`)
-
-      pm.request.url.query.add(`signature=${signature}`)
-
-       ```
-
-      - เพิ่ม query parameters ใหม่สำหรับ **API authentication**
-          
-      - API ปลายทางจะตรวจสอบ `key, timestamp, signature` เพื่อความปลอดภัย
-          
-
-      **ภาษาอื่น**:
-
-
-      - Python → append query dict + `requests.get(url, params=query)`
-          
-      - Go → `url.Values.Add()`
-          
-      - Java → ใช้ `URIBuilder` + `addParameter()`
-          
-
-      ---
-
-
-      # **Summary Concept**
-
-
-      1. ดึงค่าจาก environment → `key`, `secret`
-          
-      2. สร้าง `timestamp` และ Base64 encode key
-          
-      3. ดึง query params → ทำเป็น Object / Dictionary
-          
-      4. รวม key + timestamp เข้ากับ query params
-          
-      5. สร้าง **Base String** → เรียง key A-Z, join key=value
-          
-      6. ทำ **HMAC-SHA256** กับ `secret` → ได้ `signature`
-          
-      7. เพิ่ม `key, timestamp, signature` เข้า URL → ส่ง request
   - name: Merchant - จัดการร้านค้า
     description: >-
       Partner สามารถสร้างร้านค้า (Merchant) ภายใต้ Partner Account
@@ -360,9 +56,9 @@ tags:
     description: >-
       Merchat สามารถสร้างรายการจัดส่ง (Shipment) ภายใต้ Merchant ของตัวเองได้จาก
       API Create Shipmnet
-  - name: Wallet - เครดิตและประวัติเครดิต
+  - name: Wallet
     description: แจ้งเติมเครดิตและประวัติการเคลื่อนไหวของบัญชี
-  - name: Carrier - ขนส่ง
+  - name: Carrier
   - name: Pickup - เรียกรถเข้ารับ
 paths:
   /api/v3/merchant:
@@ -860,8 +556,7 @@ paths:
         /api/v3/shipment |
 
         | PreProd - UAT | POST |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
-        /api/v3/shipment |
+        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |  |
 
 
         **Courier Code - รายการขนส่ง**
@@ -880,8 +575,6 @@ paths:
         | Kerry Express | KERRY_EXPRESS_SP |  |
 
         | Flash Express | FLASH_EXPRESS_SP |  |
-
-        | Shopee Express | SHOPEE_EXPRESS |  |
 
 
         **\* สามารถใช้ Get Carrier List สำหรับดู Carrier ทั้งหมดในระบบได้**\*  
@@ -1101,12 +794,117 @@ paths:
             application/json:
               schema:
                 type: object
-              example:
-                data:
-                  tracking_number: EB538738735TH
-                  charge: '0'
-                  wallet_balance: '993287.0000'
-                timestamp: '2024-09-17 03:26:23'
+              examples:
+                example-0:
+                  summary: '200'
+                  value:
+                    data:
+                      tracking_number: EB538738735TH
+                      charge: '0'
+                      wallet_balance: '993287.0000'
+                    timestamp: '2024-09-17 03:26:23'
+                example-1:
+                  summary: 200 OK 1
+                  value:
+                    data:
+                      tracking_number: EB848789125TH
+                      charge: 115
+                      wallet_balance: 525
+                    timestamp: '2024-09-25 02:38:18'
+                    request_id: c26d56910b964c40a353c966261904ca
+                example-2:
+                  summary: 200 OK 2
+                  value:
+                    data:
+                      tracking_number: EB848789139TH
+                      charge: 115
+                      wallet_balance: 410
+                    timestamp: '2024-09-25 02:38:58'
+                    request_id: 8cb39a892a6e4df585d185d9bff98ee5
+                example-3:
+                  summary: 200 OK 3
+                  value:
+                    data:
+                      tracking_number: EB848789142TH
+                      charge: 115
+                      wallet_balance: 295
+                    timestamp: '2024-09-25 02:39:22'
+                    request_id: 3d4fb21ae8c34260a88d2539f8ee209e
+                example-4:
+                  summary: 200 Flash
+                  value:
+                    message: success
+                    data:
+                      status: true
+                      tracking_number:
+                        status: 200
+                        body:
+                          status: true
+                          purchase_id: 456264
+                          total_price: 90
+                          total_cod_charge: 0
+                          total_cod_charge_vat: 0
+                          data:
+                            - status: true
+                              tracking_code: SP452096468
+                              courier_code: FLE
+                              price: 90
+                              discount: 0
+                              from:
+                                district: บางบ่อ
+                                state: บางบ่อ
+                                province: สมุทรปราการ
+                                postcode: '10560'
+                                country: Thailand
+                                address: '888'
+                                name: Rosario
+                                email: cs.logistic@goship.co.th
+                                tel: '0992820416'
+                                lat: ''
+                                lng: ''
+                                mem_id: '14182'
+                                origin_id: 954672
+                              to:
+                                district: เกาะหมาก
+                                state: เกาะกูด
+                                province: ตราด
+                                postcode: '23000'
+                                country: Thailand
+                                address: 270 ม.3 หมู่บ้านปัญญารีสอร์ท
+                                name: Adriel
+                                email: ''
+                                tel: '0818619480'
+                                lat: ''
+                                lng: ''
+                                dest_id: 1555497
+                              price_travel_area: 30
+                              price_island_area: 30
+                              cod_amount: 0
+                              cod_charge: 0
+                              cod_vat: 0
+                              courier_tracking_code: TH2306E5R48A
+                        request_info:
+                          time: 2.464013
+                          endpoint: https://mkpservice.shippop.dev/booking/
+                      message: cancel success
+                    request_id: c9cf2214d8a24bdb949966ada4732944
+                example-5:
+                  summary: 400 Flash
+                  value:
+                    message: success
+                    data:
+                      status: true
+                      tracking_number:
+                        status: 200
+                        body:
+                          status: false
+                          code: 400
+                          message: 'Error: Invalid API key'
+                        request_info:
+                          time: 0.980995
+                          endpoint: https://mkpservice.shippop.dev/booking/
+                      message: cancel success
+                    request_id: 7efd18ab60ed4261b72267d672fddaa4
         '400':
           description: Bad Request
           headers:
@@ -1164,11 +962,21 @@ paths:
             application/json:
               schema:
                 type: object
-              example:
-                code: ERROR_VALIDATION
-                message: The origin.telephone1 must be at least 9 characters.
-                timestamp: '2024-09-25T02:39:57+00:00'
-                request_id: 1a04456e2118474e9ac46f24f5fd185f
+              examples:
+                example-0:
+                  summary: 400 Bad Request
+                  value:
+                    code: ERROR_VALIDATION
+                    message: The origin.telephone1 must be at least 9 characters.
+                    timestamp: '2024-09-25T02:39:57+00:00'
+                    request_id: 1a04456e2118474e9ac46f24f5fd185f
+                example-1:
+                  summary: 400 balance
+                  value:
+                    code: ERROR_VALIDATION
+                    message: balance is insufficient
+                    timestamp: '2025-01-15T10:54:19+00:00'
+                    request_id: d651c687150649ca95ac393a1f1f065c
         '500':
           description: Internal Server Error
           headers:
@@ -1294,26 +1102,16 @@ paths:
         '200':
           description: OK
           headers:
-            Content-Type:
-              schema:
-                type: string
-                example: application/json
-            Transfer-Encoding:
-              schema:
-                type: string
-                example: chunked
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
             Date:
               schema:
                 type: string
-                example: Wed, 25 Sep 2024 03:02:01 GMT
+                example: Tue, 17 Sep 2024 03:26:38 GMT
             Server:
               schema:
                 type: number
-                example: nginx/1.20.2
+                example: >-
+                  Apache/2.4.54 (Unix) mod_fastcgi/mod_fastcgi-SNAP-0910052141
+                  OpenSSL/1.0.2u mod_wsgi/3.5 Python/2.7.18
             X-Powered-By:
               schema:
                 type: number
@@ -1326,302 +1124,695 @@ paths:
               schema:
                 type: string
                 example: '*'
-            Content-Encoding:
+            X-Clockwork-Id:
               schema:
                 type: string
-                example: gzip
-            X-Cache:
+                example: 1726543598-2185-1023028631
+            X-Clockwork-Version:
               schema:
-                type: string
-                example: Miss from cloudfront
-            Via:
+                type: number
+                example: 5.1.12
+            Server-Timing:
               schema:
                 type: number
                 example: >-
-                  1.1 e0ea0b75bb57e29376790553abd73332.cloudfront.net
-                  (CloudFront)
-            X-Amz-Cf-Pop:
+                  app; dur=357.22208023071; desc="Application", db; dur=35.66;
+                  desc="Database", timeline-event-0; dur=110.16821861267;
+                  desc="Controller"
+            Keep-Alive:
               schema:
                 type: string
-                example: BKK50-C1
-            X-Amz-Cf-Id:
+                example: timeout=5, max=100
+            Connection:
               schema:
                 type: string
-                example: EEYvfUfwFcyyPGv-XtPqIV3E5Wmhy27986xS8dRb6yXgpgCpLjr8rw==
+                example: Keep-Alive
+            Transfer-Encoding:
+              schema:
+                type: string
+                example: chunked
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
           content:
             application/json:
               schema:
                 type: object
-              example:
-                data:
-                  - tracking_number: EB848789142TH
-                    carrier_code: THAIPOST
-                    status: waiting
-                    box_height: '0.0000'
-                    box_length: '200.0000'
-                    box_width: '0.0000'
-                    weight: '400.0000'
-                    estimate_price: '35.0000'
-                    estimate_cod_amount: '0.0000'
-                    estimate_cod_price: '0.0000'
-                    estimate_cod_price_before_vat: '0.0000'
-                    estimate_cod_price_vat: '0.0000'
-                    estimate_cod_tax: '0.0000'
-                    estimate_on_holiday_price: '0.0000'
-                    estimate_per_txn_margin: '0.0000'
-                    estimate_remote_price: '80.0000'
-                    estimate_tourism_price: '0.0000'
-                    estimate_island_price: '0.0000'
-                    estimate_warranty_price: '0.0000'
-                    reference_no: SM00000001
-                    remark: Call +6692000000, iPhone 11 (1), iPhone Cable Charge (1)
-                    actual_price: '0'
-                    actual_cod_amount: '0'
-                    actual_cod_price: '0'
-                    actual_cod_price_before_vat: '0'
-                    actual_cod_price_vat: '0'
-                    actual_on_holiday_price: '0'
-                    actual_per_txn_margin: '0'
-                    actual_remote_price: '0'
-                    actual_tourism_price: '0'
-                    actual_warranty_price: '0'
-                    create_date: '2024-09-25 02:39:22'
-                    update_date: '2024-09-25 02:39:22'
-                  - tracking_number: EB848789139TH
-                    carrier_code: THAIPOST
-                    status: waiting
-                    box_height: '0.0000'
-                    box_length: '200.0000'
-                    box_width: '0.0000'
-                    weight: '400.0000'
-                    estimate_price: '35.0000'
-                    estimate_cod_amount: '0.0000'
-                    estimate_cod_price: '0.0000'
-                    estimate_cod_price_before_vat: '0.0000'
-                    estimate_cod_price_vat: '0.0000'
-                    estimate_cod_tax: '0.0000'
-                    estimate_on_holiday_price: '0.0000'
-                    estimate_per_txn_margin: '0.0000'
-                    estimate_remote_price: '80.0000'
-                    estimate_tourism_price: '0.0000'
-                    estimate_island_price: '0.0000'
-                    estimate_warranty_price: '0.0000'
-                    reference_no: SM00000001
-                    remark: Call +6692000000, iPhone 11 (1), iPhone Cable Charge (1)
-                    actual_price: '0'
-                    actual_cod_amount: '0'
-                    actual_cod_price: '0'
-                    actual_cod_price_before_vat: '0'
-                    actual_cod_price_vat: '0'
-                    actual_on_holiday_price: '0'
-                    actual_per_txn_margin: '0'
-                    actual_remote_price: '0'
-                    actual_tourism_price: '0'
-                    actual_warranty_price: '0'
-                    create_date: '2024-09-25 02:38:58'
-                    update_date: '2024-09-25 02:38:58'
-                  - tracking_number: EB848789125TH
-                    carrier_code: THAIPOST
-                    status: waiting
-                    box_height: '0.0000'
-                    box_length: '200.0000'
-                    box_width: '0.0000'
-                    weight: '400.0000'
-                    estimate_price: '35.0000'
-                    estimate_cod_amount: '0.0000'
-                    estimate_cod_price: '0.0000'
-                    estimate_cod_price_before_vat: '0.0000'
-                    estimate_cod_price_vat: '0.0000'
-                    estimate_cod_tax: '0.0000'
-                    estimate_on_holiday_price: '0.0000'
-                    estimate_per_txn_margin: '0.0000'
-                    estimate_remote_price: '80.0000'
-                    estimate_tourism_price: '0.0000'
-                    estimate_island_price: '0.0000'
-                    estimate_warranty_price: '0.0000'
-                    reference_no: SM00000001
-                    remark: Call +6692000000, iPhone 11 (1), iPhone Cable Charge (1)
-                    actual_price: '0'
-                    actual_cod_amount: '0'
-                    actual_cod_price: '0'
-                    actual_cod_price_before_vat: '0'
-                    actual_cod_price_vat: '0'
-                    actual_on_holiday_price: '0'
-                    actual_per_txn_margin: '0'
-                    actual_remote_price: '0'
-                    actual_tourism_price: '0'
-                    actual_warranty_price: '0'
-                    create_date: '2024-09-25 02:38:18'
-                    update_date: '2024-09-25 02:38:18'
-                  - tracking_number: EB848789111TH
-                    carrier_code: THAIPOST
-                    status: waiting
-                    box_height: '0.0000'
-                    box_length: '200.0000'
-                    box_width: '0.0000'
-                    weight: '400.0000'
-                    estimate_price: '35.0000'
-                    estimate_cod_amount: '0.0000'
-                    estimate_cod_price: '0.0000'
-                    estimate_cod_price_before_vat: '0.0000'
-                    estimate_cod_price_vat: '0.0000'
-                    estimate_cod_tax: '0.0000'
-                    estimate_on_holiday_price: '0.0000'
-                    estimate_per_txn_margin: '0.0000'
-                    estimate_remote_price: '80.0000'
-                    estimate_tourism_price: '0.0000'
-                    estimate_island_price: '0.0000'
-                    estimate_warranty_price: '0.0000'
-                    reference_no: SM00000001
-                    remark: Call +6692000000, iPhone 11 (1), iPhone Cable Charge (1)
-                    actual_price: '0'
-                    actual_cod_amount: '0'
-                    actual_cod_price: '0'
-                    actual_cod_price_before_vat: '0'
-                    actual_cod_price_vat: '0'
-                    actual_on_holiday_price: '0'
-                    actual_per_txn_margin: '0'
-                    actual_remote_price: '0'
-                    actual_tourism_price: '0'
-                    actual_warranty_price: '0'
-                    create_date: '2024-09-24 16:31:35'
-                    update_date: '2024-09-24 16:31:35'
-                  - tracking_number: EB848789108TH
-                    carrier_code: THAIPOST
-                    status: waiting
-                    box_height: '0.0000'
-                    box_length: '200.0000'
-                    box_width: '0.0000'
-                    weight: '400.0000'
-                    estimate_price: '35.0000'
-                    estimate_cod_amount: '0.0000'
-                    estimate_cod_price: '0.0000'
-                    estimate_cod_price_before_vat: '0.0000'
-                    estimate_cod_price_vat: '0.0000'
-                    estimate_cod_tax: '0.0000'
-                    estimate_on_holiday_price: '0.0000'
-                    estimate_per_txn_margin: '0.0000'
-                    estimate_remote_price: '80.0000'
-                    estimate_tourism_price: '0.0000'
-                    estimate_island_price: '0.0000'
-                    estimate_warranty_price: '0.0000'
-                    reference_no: SM00000001
-                    remark: Call +6692000000, iPhone 11 (1), iPhone Cable Charge (1)
-                    actual_price: '0'
-                    actual_cod_amount: '0'
-                    actual_cod_price: '0'
-                    actual_cod_price_before_vat: '0'
-                    actual_cod_price_vat: '0'
-                    actual_on_holiday_price: '0'
-                    actual_per_txn_margin: '0'
-                    actual_remote_price: '0'
-                    actual_tourism_price: '0'
-                    actual_warranty_price: '0'
-                    create_date: '2024-09-24 16:25:22'
-                    update_date: '2024-09-24 16:25:22'
-                  - tracking_number: EB848789099TH
-                    carrier_code: THAIPOST
-                    status: waiting
-                    box_height: '0.0000'
-                    box_length: '200.0000'
-                    box_width: '0.0000'
-                    weight: '400.0000'
-                    estimate_price: '35.0000'
-                    estimate_cod_amount: '0.0000'
-                    estimate_cod_price: '0.0000'
-                    estimate_cod_price_before_vat: '0.0000'
-                    estimate_cod_price_vat: '0.0000'
-                    estimate_cod_tax: '0.0000'
-                    estimate_on_holiday_price: '0.0000'
-                    estimate_per_txn_margin: '0.0000'
-                    estimate_remote_price: '80.0000'
-                    estimate_tourism_price: '0.0000'
-                    estimate_island_price: '0.0000'
-                    estimate_warranty_price: '0.0000'
-                    reference_no: SM00000001
-                    remark: Call +6692000000, iPhone 11 (1), iPhone Cable Charge (1)
-                    actual_price: '0'
-                    actual_cod_amount: '0'
-                    actual_cod_price: '0'
-                    actual_cod_price_before_vat: '0'
-                    actual_cod_price_vat: '0'
-                    actual_on_holiday_price: '0'
-                    actual_per_txn_margin: '0'
-                    actual_remote_price: '0'
-                    actual_tourism_price: '0'
-                    actual_warranty_price: '0'
-                    create_date: '2024-09-24 14:34:43'
-                    update_date: '2024-09-24 14:34:43'
-                  - tracking_number: EB848789085TH
-                    carrier_code: THAIPOST
-                    status: waiting
-                    box_height: '0.0000'
-                    box_length: '200.0000'
-                    box_width: '0.0000'
-                    weight: '400.0000'
-                    estimate_price: '35.0000'
-                    estimate_cod_amount: '0.0000'
-                    estimate_cod_price: '0.0000'
-                    estimate_cod_price_before_vat: '0.0000'
-                    estimate_cod_price_vat: '0.0000'
-                    estimate_cod_tax: '0.0000'
-                    estimate_on_holiday_price: '0.0000'
-                    estimate_per_txn_margin: '0.0000'
-                    estimate_remote_price: '80.0000'
-                    estimate_tourism_price: '0.0000'
-                    estimate_island_price: '0.0000'
-                    estimate_warranty_price: '0.0000'
-                    reference_no: SM00000001
-                    remark: Call +6692000000, iPhone 11 (1), iPhone Cable Charge (1)
-                    actual_price: '0'
-                    actual_cod_amount: '0'
-                    actual_cod_price: '0'
-                    actual_cod_price_before_vat: '0'
-                    actual_cod_price_vat: '0'
-                    actual_on_holiday_price: '0'
-                    actual_per_txn_margin: '0'
-                    actual_remote_price: '0'
-                    actual_tourism_price: '0'
-                    actual_warranty_price: '0'
-                    create_date: '2024-09-24 14:22:32'
-                    update_date: '2024-09-24 14:22:32'
-                links:
-                  first: http://uat-api.getshipment.co/api/v3/shipment?page=1
-                  last: http://uat-api.getshipment.co/api/v3/shipment?page=1
-                  prev: null
-                  next: null
-                meta:
-                  current_page: 1
-                  from: 1
-                  last_page: 1
-                  path: http://uat-api.getshipment.co/api/v3/shipment
-                  per_page: '10'
-                  to: 7
-                  total: 7
-                request_id: 4246d460180a4e9496d6055f06c17e5f
+              examples:
+                example-0:
+                  summary: '200'
+                  value:
+                    data:
+                      - id: 832
+                        tracking_number: EB538738735TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:26:23'
+                        update_date: '2024-09-17 10:26:23'
+                      - id: 831
+                        tracking_number: EB538738721TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:25:57'
+                        update_date: '2024-09-17 10:25:57'
+                      - id: 830
+                        tracking_number: EB538738718TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:25:47'
+                        update_date: '2024-09-17 10:25:47'
+                      - id: 829
+                        tracking_number: EB538738704TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:25:23'
+                        update_date: '2024-09-17 10:25:23'
+                      - id: 828
+                        tracking_number: EB538738695TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:25:03'
+                        update_date: '2024-09-17 10:25:03'
+                      - id: 827
+                        tracking_number: EB538738681TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:22:47'
+                        update_date: '2024-09-17 10:22:47'
+                      - id: 826
+                        tracking_number: EB538738678TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:22:21'
+                        update_date: '2024-09-17 10:22:21'
+                      - id: 825
+                        tracking_number: EB538738664TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:22:11'
+                        update_date: '2024-09-17 10:22:11'
+                      - id: 824
+                        tracking_number: EB538738655TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:21:59'
+                        update_date: '2024-09-17 10:21:59'
+                      - id: 823
+                        tracking_number: EB538738647TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '0.0000'
+                        box_width: '0.0000'
+                        weight: '0.0000'
+                        estimate_price: '0.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '0.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-17 10:21:27'
+                        update_date: '2024-09-17 10:21:27'
+                    links:
+                      first: http://getship.local/api/v3/shipment?page=1
+                      last: http://getship.local/api/v3/shipment?page=82
+                      prev: null
+                      next: http://getship.local/api/v3/shipment?page=2
+                    meta:
+                      current_page: 1
+                      from: 1
+                      last_page: 82
+                      path: http://getship.local/api/v3/shipment
+                      per_page: '10'
+                      to: 10
+                      total: 812
+                example-1:
+                  summary: 200 OK
+                  value:
+                    data:
+                      - tracking_number: EB848789142TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '200.0000'
+                        box_width: '0.0000'
+                        weight: '400.0000'
+                        estimate_price: '35.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '80.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-25 02:39:22'
+                        update_date: '2024-09-25 02:39:22'
+                      - tracking_number: EB848789139TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '200.0000'
+                        box_width: '0.0000'
+                        weight: '400.0000'
+                        estimate_price: '35.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '80.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-25 02:38:58'
+                        update_date: '2024-09-25 02:38:58'
+                      - tracking_number: EB848789125TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '200.0000'
+                        box_width: '0.0000'
+                        weight: '400.0000'
+                        estimate_price: '35.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '80.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-25 02:38:18'
+                        update_date: '2024-09-25 02:38:18'
+                      - tracking_number: EB848789111TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '200.0000'
+                        box_width: '0.0000'
+                        weight: '400.0000'
+                        estimate_price: '35.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '80.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-24 16:31:35'
+                        update_date: '2024-09-24 16:31:35'
+                      - tracking_number: EB848789108TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '200.0000'
+                        box_width: '0.0000'
+                        weight: '400.0000'
+                        estimate_price: '35.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '80.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-24 16:25:22'
+                        update_date: '2024-09-24 16:25:22'
+                      - tracking_number: EB848789099TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '200.0000'
+                        box_width: '0.0000'
+                        weight: '400.0000'
+                        estimate_price: '35.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '80.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-24 14:34:43'
+                        update_date: '2024-09-24 14:34:43'
+                      - tracking_number: EB848789085TH
+                        carrier_code: THAIPOST
+                        status: waiting
+                        box_height: '0.0000'
+                        box_length: '200.0000'
+                        box_width: '0.0000'
+                        weight: '400.0000'
+                        estimate_price: '35.0000'
+                        estimate_cod_amount: '0.0000'
+                        estimate_cod_price: '0.0000'
+                        estimate_cod_price_before_vat: '0.0000'
+                        estimate_cod_price_vat: '0.0000'
+                        estimate_cod_tax: '0.0000'
+                        estimate_on_holiday_price: '0.0000'
+                        estimate_per_txn_margin: '0.0000'
+                        estimate_remote_price: '80.0000'
+                        estimate_tourism_price: '0.0000'
+                        estimate_island_price: '0.0000'
+                        estimate_warranty_price: '0.0000'
+                        reference_no: SM00000001
+                        remark: >-
+                          Call +6692000000, iPhone 11 (1), iPhone Cable Charge
+                          (1)
+                        actual_price: '0'
+                        actual_cod_amount: '0'
+                        actual_cod_price: '0'
+                        actual_cod_price_before_vat: '0'
+                        actual_cod_price_vat: '0'
+                        actual_on_holiday_price: '0'
+                        actual_per_txn_margin: '0'
+                        actual_remote_price: '0'
+                        actual_tourism_price: '0'
+                        actual_warranty_price: '0'
+                        create_date: '2024-09-24 14:22:32'
+                        update_date: '2024-09-24 14:22:32'
+                    links:
+                      first: http://uat-api.getshipment.co/api/v3/shipment?page=1
+                      last: http://uat-api.getshipment.co/api/v3/shipment?page=1
+                      prev: null
+                      next: null
+                    meta:
+                      current_page: 1
+                      from: 1
+                      last_page: 1
+                      path: http://uat-api.getshipment.co/api/v3/shipment
+                      per_page: '10'
+                      to: 7
+                      total: 7
+                    request_id: 4246d460180a4e9496d6055f06c17e5f
         '400':
           description: Bad Request
           headers:
-            Content-Type:
-              schema:
-                type: string
-                example: application/json
-            Transfer-Encoding:
-              schema:
-                type: string
-                example: chunked
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
             Date:
               schema:
                 type: string
-                example: Wed, 25 Sep 2024 03:08:31 GMT
+                example: Tue, 17 Sep 2024 03:29:23 GMT
             Server:
               schema:
                 type: number
-                example: nginx/1.20.2
+                example: >-
+                  Apache/2.4.54 (Unix) mod_fastcgi/mod_fastcgi-SNAP-0910052141
+                  OpenSSL/1.0.2u mod_wsgi/3.5 Python/2.7.18
             X-Powered-By:
               schema:
                 type: number
@@ -1634,33 +1825,50 @@ paths:
               schema:
                 type: string
                 example: '*'
-            X-Cache:
+            X-Clockwork-Id:
               schema:
                 type: string
-                example: Error from cloudfront
-            Via:
+                example: 1726543763-4238-672391718
+            X-Clockwork-Version:
+              schema:
+                type: number
+                example: 5.1.12
+            Server-Timing:
               schema:
                 type: number
                 example: >-
-                  1.1 f2a344e19c8cd8196c62f947aa7543ba.cloudfront.net
-                  (CloudFront)
-            X-Amz-Cf-Pop:
+                  app; dur=306.59317970276; desc="Application",
+                  timeline-event-0; dur=48.986911773682; desc="Controller"
+            Connection:
               schema:
                 type: string
-                example: BKK50-C1
-            X-Amz-Cf-Id:
+                example: close
+            Transfer-Encoding:
               schema:
                 type: string
-                example: ByXRzvI9OyMS9UMZDe6ofUqZKTLRskbzvHr6n28zIVOGn0C1VHDGQQ==
+                example: chunked
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
           content:
             application/json:
               schema:
                 type: object
-              example:
-                code: ERROR_VALIDATION
-                message: The viewpoint field is required.
-                timestamp: '2024-09-25T03:08:31+00:00'
-                request_id: 0056f93a46c041798cb6d8284787c580
+              examples:
+                example-0:
+                  summary: '400'
+                  value:
+                    code: ERROR_VALIDATION
+                    message: The selected viewpoint is invalid.
+                    timestamp: '2024-09-17 03:29:23'
+                example-1:
+                  summary: 400 Bad Request
+                  value:
+                    code: ERROR_VALIDATION
+                    message: The viewpoint field is required.
+                    timestamp: '2024-09-25T03:08:31+00:00'
+                    request_id: 0056f93a46c041798cb6d8284787c580
   /api/v3/shipment/print:
     post:
       tags:
@@ -1974,11 +2182,21 @@ paths:
             application/json:
               schema:
                 type: object
-              example:
-                data:
-                  status: ok
-                timestamp: '2024-09-19 03:43:27'
-                request_id: a61051a9af4b46f4a970ce9cad2d3636
+              examples:
+                example-0:
+                  summary: '200'
+                  value:
+                    data:
+                      status: ok
+                    timestamp: '2024-09-19 03:43:27'
+                    request_id: a61051a9af4b46f4a970ce9cad2d3636
+                example-1:
+                  summary: Cancel 200 OK
+                  value:
+                    data:
+                      status: ok
+                    timestamp: '2024-09-25 03:25:52'
+                    request_id: fd2e355b0f934675b60028001ce60ec3
         '400':
           description: Bad Request
           headers:
@@ -2239,7 +2457,7 @@ paths:
   /api/v3/wallet:
     post:
       tags:
-        - Wallet - เครดิตและประวัติเครดิต
+        - Wallet
       summary: Deposit Wallet - เติมเงินเครดิต
       description: >-
         **Deposit Wallet - เติมเงินเครดิต**
@@ -2435,7 +2653,7 @@ paths:
                 request_id: 1179c7d4d16b4230b193564ccba40045
     get:
       tags:
-        - Wallet - เครดิตและประวัติเครดิต
+        - Wallet
       summary: Transactions - ประวัติการเคลื่อนไหวของบัญชี
       description: >-
         **Transactions - ประวัติการเคลื่อนไหวของบัญชี**
@@ -2579,7 +2797,7 @@ paths:
   /api/v3/carrier/list:
     get:
       tags:
-        - Carrier - ขนส่ง
+        - Carrier
       summary: Get Carrier List - แสดง Carrier ทั้งหมด
       description: >-
         **Get Carrier List - แสดง Carrier ทั้งหมด**
