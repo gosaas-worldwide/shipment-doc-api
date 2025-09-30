@@ -379,11 +379,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | POST |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/merchant |
 
         | PreProd - UAT | POST |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/merchant |
 
 
@@ -856,11 +856,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | POST |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/shipment |
 
         | PreProd - UAT | POST |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/shipment |
 
 
@@ -1242,11 +1242,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/shipment?viewpoint=all&limit=10&page=1&sort=create_date |
 
         | PreProd - UAT | GET |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/shipment?viewpoint=all&limit=10&page=1&sort=create_date |
 
 
@@ -1586,15 +1586,15 @@ paths:
                     create_date: '2024-09-24 14:22:32'
                     update_date: '2024-09-24 14:22:32'
                 links:
-                  first: http://uat-api.getshipment.co/api/v3/shipment?page=1
-                  last: http://uat-api.getshipment.co/api/v3/shipment?page=1
+                  first: http://uat-api.goship.express/api/v3/shipment?page=1
+                  last: http://uat-api.goship.express/api/v3/shipment?page=1
                   prev: null
                   next: null
                 meta:
                   current_page: 1
                   from: 1
                   last_page: 1
-                  path: http://uat-api.getshipment.co/api/v3/shipment
+                  path: http://uat-api.goship.express/api/v3/shipment
                   per_page: '10'
                   to: 7
                   total: 7
@@ -1675,11 +1675,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | POST |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/shipment/print |
 
         | PreProd - UAT | POST |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/shipment/print |
 
 
@@ -1883,11 +1883,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | PUT |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/shipment/cancel/{TRACKING_NUMBER} |
 
         | PreProd - UAT | PUT |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/shipment/cancel/{TRACKING_NUMBER} |
 
 
@@ -2054,11 +2054,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/shipment/check-price |
 
         | PreProd - UAT | GET |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/shipment/check-price |
       requestBody:
         content:
@@ -2204,12 +2204,12 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/shipment/check-address?postcode=64160&carrier_code=THAIPOST&limit=1000
         |
 
         | PreProd - UAT | GET |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/shipment/check-address?postcode=64160&carrier_code=THAIPOST&limit=1000
         |
       parameters:
@@ -2250,11 +2250,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/wallet |
 
         | PreProd - UAT | GET |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/wallet |
 
 
@@ -2446,11 +2446,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/wallet |
 
         | PreProd - UAT | GET |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/wallet |
 
 
@@ -2562,15 +2562,15 @@ paths:
                     create_date: '2024-09-24 07:51:24'
                     update_date: '2024-09-24 07:51:24'
                 links:
-                  first: http://uat-api.getshipment.co/api/v3/wallet?page=1
-                  last: http://uat-api.getshipment.co/api/v3/wallet?page=1
+                  first: http://uat-api.goship.express/api/v3/wallet?page=1
+                  last: http://uat-api.goship.express/api/v3/wallet?page=1
                   prev: null
                   next: null
                 meta:
                   current_page: 1
                   from: 1
                   last_page: 1
-                  path: http://uat-api.getshipment.co/api/v3/wallet
+                  path: http://uat-api.goship.express/api/v3/wallet
                   per_page: 15
                   to: 2
                   total: 2
@@ -2590,11 +2590,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/carrier/list?limit=25 |
 
         | PreProd - UAT | GET |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/carrier/list?limit=25 |
 
 
@@ -2685,15 +2685,15 @@ paths:
                     description: ''
                     code: BS_EXPRESS
                 links:
-                  first: http://uat-api.getshipment.co/api/v3/carrier/list?page=1
-                  last: http://uat-api.getshipment.co/api/v3/carrier/list?page=1
+                  first: http://uat-api.goship.express/api/v3/carrier/list?page=1
+                  last: http://uat-api.goship.express/api/v3/carrier/list?page=1
                   prev: null
                   next: null
                 meta:
                   current_page: 1
                   from: 1
                   last_page: 1
-                  path: http://uat-api.getshipment.co/api/v3/carrier/list
+                  path: http://uat-api.goship.express/api/v3/carrier/list
                   per_page: 100
                   to: 8
                   total: 8
@@ -2712,11 +2712,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/pickup |
 
         | PreProd - UAT | GET |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/pickup |
 
 
@@ -2793,11 +2793,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        [https://api.getshipment.co](https://api.getshipment.co) |
+        https://api.goship.express |
         /api/v3/pickup/{{pickup_id}}/cancel |
 
         | PreProd - UAT | GET |
-        [https://uat-api.getshipment.co](https://uat-api.getshipment.co) |
+        https://uat-api.goship.express |
         /api/v3/pickup/{{pickup_id}}/cancel |
 
 
