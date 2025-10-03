@@ -364,6 +364,7 @@ tags:
     description: แจ้งเติมเครดิตและประวัติการเคลื่อนไหวของบัญชี
   - name: Carrier - ขนส่ง
   - name: Pickup - เรียกรถเข้ารับ
+
 paths:
   /api/v3/merchant:
     post:
@@ -379,11 +380,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | POST |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/merchant |
 
         | PreProd - UAT | POST |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/merchant |
 
 
@@ -856,11 +857,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | POST |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/shipment |
 
         | PreProd - UAT | POST |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/shipment |
 
 
@@ -913,7 +914,9 @@ paths:
         | reference_no | required | string | Reference No., Tx ID หรือ Order ID
         |
 
-        | external_id | required | string | UUID |
+        | external_id | required | string | Unique Random ID หรือ UUID  <br>(The
+        external_id is unique random, you can use UUID and must change unique
+        external_id for new request, not use same before) |
 
         | **origin** |  |  | ที่อยู่ต้นทาง |
 
@@ -1242,11 +1245,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        https://api.goship.express |
+        [https://api.getshipment.co](https://api.getshipment.co) |
         /api/v3/shipment?viewpoint=all&limit=10&page=1&sort=create_date |
 
         | PreProd - UAT | GET |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/shipment?viewpoint=all&limit=10&page=1&sort=create_date |
 
 
@@ -1586,15 +1589,15 @@ paths:
                     create_date: '2024-09-24 14:22:32'
                     update_date: '2024-09-24 14:22:32'
                 links:
-                  first: http://uat-api.goship.express/api/v3/shipment?page=1
-                  last: http://uat-api.goship.express/api/v3/shipment?page=1
+                  first: http://uat-api.getshipment.co/api/v3/shipment?page=1
+                  last: http://uat-api.getshipment.co/api/v3/shipment?page=1
                   prev: null
                   next: null
                 meta:
                   current_page: 1
                   from: 1
                   last_page: 1
-                  path: http://uat-api.goship.express/api/v3/shipment
+                  path: http://uat-api.getshipment.co/api/v3/shipment
                   per_page: '10'
                   to: 7
                   total: 7
@@ -1675,11 +1678,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | POST |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/shipment/print |
 
         | PreProd - UAT | POST |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/shipment/print |
 
 
@@ -1883,11 +1886,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | PUT |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/shipment/cancel/{TRACKING_NUMBER} |
 
         | PreProd - UAT | PUT |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/shipment/cancel/{TRACKING_NUMBER} |
 
 
@@ -2054,11 +2057,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/shipment/check-price |
 
         | PreProd - UAT | GET |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/shipment/check-price |
       requestBody:
         content:
@@ -2204,12 +2207,12 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/shipment/check-address?postcode=64160&carrier_code=THAIPOST&limit=1000
         |
 
         | PreProd - UAT | GET |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/shipment/check-address?postcode=64160&carrier_code=THAIPOST&limit=1000
         |
       parameters:
@@ -2250,11 +2253,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/wallet |
 
         | PreProd - UAT | GET |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/wallet |
 
 
@@ -2446,11 +2449,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/wallet |
 
         | PreProd - UAT | GET |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/wallet |
 
 
@@ -2562,15 +2565,15 @@ paths:
                     create_date: '2024-09-24 07:51:24'
                     update_date: '2024-09-24 07:51:24'
                 links:
-                  first: http://uat-api.goship.express/api/v3/wallet?page=1
-                  last: http://uat-api.goship.express/api/v3/wallet?page=1
+                  first: http://uat-api.getshipment.co/api/v3/wallet?page=1
+                  last: http://uat-api.getshipment.co/api/v3/wallet?page=1
                   prev: null
                   next: null
                 meta:
                   current_page: 1
                   from: 1
                   last_page: 1
-                  path: http://uat-api.goship.express/api/v3/wallet
+                  path: http://uat-api.getshipment.co/api/v3/wallet
                   per_page: 15
                   to: 2
                   total: 2
@@ -2590,11 +2593,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/carrier/list?limit=25 |
 
         | PreProd - UAT | GET |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/carrier/list?limit=25 |
 
 
@@ -2685,15 +2688,15 @@ paths:
                     description: ''
                     code: BS_EXPRESS
                 links:
-                  first: http://uat-api.goship.express/api/v3/carrier/list?page=1
-                  last: http://uat-api.goship.express/api/v3/carrier/list?page=1
+                  first: http://uat-api.getshipment.co/api/v3/carrier/list?page=1
+                  last: http://uat-api.getshipment.co/api/v3/carrier/list?page=1
                   prev: null
                   next: null
                 meta:
                   current_page: 1
                   from: 1
                   last_page: 1
-                  path: http://uat-api.goship.express/api/v3/carrier/list
+                  path: http://uat-api.getshipment.co/api/v3/carrier/list
                   per_page: 100
                   to: 8
                   total: 8
@@ -2712,11 +2715,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/pickup |
 
         | PreProd - UAT | GET |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/pickup |
 
 
@@ -2793,11 +2796,11 @@ paths:
         | --- | --- | --- | --- |
 
         | Production | GET |
-        https://api.goship.express |
+        [https://api.goship.express](https://api.goship.express) |
         /api/v3/pickup/{{pickup_id}}/cancel |
 
         | PreProd - UAT | GET |
-        https://uat-api.goship.express |
+        [https://uat-api.goship.express](https://uat-api.goship.express) |
         /api/v3/pickup/{{pickup_id}}/cancel |
 
 
@@ -2824,3 +2827,304 @@ paths:
           description: Successful response
           content:
             application/json: {}
+  /path-status:
+    post:
+      tags:
+        - Tracking info (Hook/Push)
+      summary: Hook - Shipment Status
+      description: >-
+        **Hook - Shipment Status - ส่งการจัดส่งสถานะ**
+
+
+        |  | **Method** | **Host** |
+
+        | --- | --- | --- |
+
+        | Production | POST |
+        [http://partner-domain.com/path-status](http://partner-domain.com/path-status)
+        |
+
+        | PreProd - UAT | POST |
+        [http://uat-partner-domain.com/path-status](https://uat-partner-domain.com/path-status)
+        |
+
+
+        **Response Body**
+
+
+        | Name ( Parameter ) | Optional | Type | Description |
+
+        | --- | --- | --- | --- |
+
+        | url | required | string | Partner URL |
+
+        | event | required | string | shipment.waiting=รอดำเนินการ 
+        <br>shipment.on_delivery=กำลังจัดส่ง 
+        <br>shipment.delivered=จัดส่งสำเร็จ  <br>shipment.on_return=กำลังตีกลับ 
+        <br>shipment.returned=ตีกลับสำเร็จ  <br>shipment.claimed=ส่ง Claim 
+        <br>shipment.canceled=ยกเลิก  <br>shipment.closed = ปิด(พัสดุมีปัญหา) |
+
+        | object | required | string | shipment |
+
+        | merchant_code | required | string | รหัสร้านค้า  <br>(เช่น MC21000005)
+        |
+
+        | data | required | objecs |  |
+
+        | data.tracking_number | required | string | เลขแทรกพัสดุ  <br>(เช่น
+        TH0123658SPN2B) |
+
+        | data.carrier | required | string | รหัสขนส่ง  <br>(เช่น THAIPOST) |
+
+        | data.cod_amount | required | string | จำนวน COD เริ่มต้น 0.0000 |
+
+        | data.status | required | string | **สถานะพัสดุ** 
+        <br>waiting=รอดำเนินการ  <br>on_delivery=กำลังจัดส่ง 
+        <br>delivered=จัดส่งสำเร็จ  <br>on_return=กำลังตีกลับ 
+        <br>returned=ตีกลับสำเร็จ  <br>claimed=ส่ง Claim  <br>canceled=ยกเลิก 
+        <br>closed = พัสดุสำเร็จ(มีปัญหา) |
+
+        | data.weight | required | float | น้ำหนักพัสดุ (g) |
+
+        | data.width | required | float | ความกว้างพัสดุ (cm) |
+
+        | data.length | required | float | ความยาวพัสดุ (cm) |
+
+        | data.height | required | float | ความสูงพัสดุ (cm) |
+
+        | data.updated | required | string | Update ล่าสุดวัน/เวลา (GMT+7) |
+
+
+        **Response Status Code**
+
+
+        | Status Code | Description |
+
+        | --- | --- |
+
+        | 200 | Successful. |
+
+        | 400 | Error |
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                url: http://partner-domain.com/path-status
+                event: shipment.delivered
+                object: shipment
+                merchant_code: MC21000005
+                data:
+                  tracking_number: TH0123658SPN2B
+                  carrier: THAIPOST
+                  cod_amount: 0
+                  status: delivered
+                  weight: 10
+                  width: 10
+                  length: 10
+                  height: 10
+                  updated: '2024-09-26T06:23:09+00:00'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /path-price:
+    post:
+      tags:
+        - Tracking info (Hook/Push)
+      summary: Hook - Shipment Price
+      description: >-
+        **Hook - Shipment Price - ราคาค่าจัดส่ง**
+
+
+        |  | **Method** | **Host** |
+
+        | --- | --- | --- |
+
+        | Production | POST |
+        [http://partner-domain.com/path-price](http://partner-domain.com/path-price)
+        |
+
+        | PreProd - UAT | POST |
+        [http://uat-partner-domain.com/path-price](https://uat-partner-domain.com/path-price)
+        |
+
+
+        **Response Body**
+
+
+        | Name ( Parameter ) | Optional | Type | Description |
+
+        | --- | --- | --- | --- |
+
+        | url | required | string | Partner URL |
+
+        | event | required | string | shipment.waiting=รอดำเนินการ 
+        <br>shipment.on_delivery=กำลังจัดส่ง 
+        <br>shipment.delivered=จัดส่งสำเร็จ  <br>shipment.on_return=กำลังตีกลับ 
+        <br>shipment.returned=ตีกลับสำเร็จ  <br>shipment.claimed=ส่ง Claim 
+        <br>shipment.canceled=ยกเลิก  <br>shipment.closed = ปิด(พัสดุมีปัญหา) |
+
+        | object | required | string | Shipment |
+
+        | merchant_code | required | string | รหัสร้านค้า  <br>(เช่น MC21000005)
+        |
+
+        | data | required | objecs |  |
+
+        | data.tracking_number | required | string | เลขแทรกพัสดุ  <br>(เช่น
+        TH0123658SPN2B) |
+
+        | data.carrier | required | string | รหัสขนส่ง  <br>(เช่น THAIPOST) |
+
+        | data.price_surcharge | required | objecs |  |
+
+        | data.price_surcharge.type | required | string | deposit=ฝาก |
+
+        | data.price_surcharge.price | required | float | ราคาค่าส่ง เริ่มต้น
+        1.0000 |
+
+        | data.weight | required | float | น้ำหนักพัสดุ (g) |
+
+        | data.width | required | float | ความกว้างพัสดุ (cm) |
+
+        | data.length | required | float | ความยาวพัสดุ (cm) |
+
+        | data.height | required | float | ความสูงพัสดุ (cm) |
+
+        | data.updated | required | string | Update ล่าสุดวัน/เวลา (GMT+7) |
+
+
+        **Response Status Code**
+
+
+        | Status Code | Description |
+
+        | --- | --- |
+
+        | 200 | Successful. |
+
+        | 400 | Error |
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                url: http://partner-domain.com/path-price
+                event: shipment.price
+                object: shipment
+                merchant_code: MC21000005
+                data:
+                  tracking_number: TH0123658SPN2B
+                  carrier: THAIPOST
+                  price_surcharge:
+                    type: deposit
+                    price: 1
+                  weight: 10
+                  width: 10
+                  length: 10
+                  height: 10
+                  updated: '2024-09-26T06:23:09+00:00'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /path-pickup:
+    post:
+      tags:
+        - Tracking info (Hook/Push)
+      summary: Hook - Pickup Status
+      description: >-
+        **Hook - Pickup Status - สถานะเรียกรถเข้ารับ**
+
+
+        |  | **Method** | **Host** |
+
+        | --- | --- | --- |
+
+        | Production | POST |
+        [http://partner-domain.com/path-pickup](http://partner-domain.com/path-pickup)
+        |
+
+        | PreProd - UAT | POST |
+        [http://uat-partner-domain.com/path-pickup](https://uat-partner-domain.com/path-pickup)
+        |
+
+
+        **Response Body**
+
+
+        | Name ( Parameter ) | Optional | Type | Description |
+
+        | --- | --- | --- | --- |
+
+        | url | required | string | Partner URL |
+
+        | event | required | string | pickup.pending=รอดำเนินการ 
+        <br>pickup.on_process=กำลังเข้ารับ  <br>pickup.completed=เข้ารับสำเร็จ 
+        <br>pickup.canceled=ยกเลิก |
+
+        | object | required | string | pickup |
+
+        | merchant_code | required | string | รหัสร้านค้า  <br>(เช่น MC21000005)
+        |
+
+        | data | required | objecs |  |
+
+        | data.ticket_pickup_id | required | string | เลข Pickup ID  <br>(เช่น
+        1234556) |
+
+        | data.carrier | required | string | รหัสขนส่ง FLASH_EXPRESS_SP |
+
+        | data.status | required | string | **สถานะเข้ารับ** 
+        <br>pending=รอดำเนินการ  <br>on_process=กำลังเข้ารับ 
+        <br>completed=เข้ารับสำเร็จ  <br>canceled=ยกเลิก |
+
+        | data.staff_name | required | string | ชื่อพนักงานเข้ารับ |
+
+        | data.staff_phone | required | string | เบอร์โทรติดต่อพนักงานเข้ารับ |
+
+        | data.estimate_time | required | string | วัน / เวลา เข้ารับโดยประมาณ 
+        <br>(เช่น วันนี้ 15:08 \~ 17:08) |
+
+        | data.updated | required | string | Update ล่าสุดวัน/เวลา (GMT+7) |
+
+
+        **Response Status Code**
+
+
+        | Status Code | Description |
+
+        | --- | --- |
+
+        | 200 | Successful. |
+
+        | 400 | Error |
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                url: http://partner-domain.com/path-pickup
+                event: pickup.on_process
+                object: pickup
+                merchant_code: MC21000005
+                data:
+                  ticket_pickup_id: 1234556
+                  carrier: FLASH_EXPRESS_SP
+                  status: on_process
+                  staff_name: สมชาย
+                  staff_phone: '0376820098'
+                  estimate_time: วันนี้ 15:08 ~ 17:08
+                  updated: '2024-09-26T06:23:09+00:00'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
