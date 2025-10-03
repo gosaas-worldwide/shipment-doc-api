@@ -2882,7 +2882,7 @@ paths:
         <br>waiting=รอดำเนินการ  <br>on_delivery=กำลังจัดส่ง 
         <br>delivered=จัดส่งสำเร็จ  <br>on_return=กำลังตีกลับ 
         <br>returned=ตีกลับสำเร็จ  <br>claimed=ส่ง Claim  <br>canceled=ยกเลิก 
-        <br>closed = พัสดุสำเร็จ(มีปัญหา) |
+        <br>closed = ปิด(มีปัญหา) |
 
         | data.weight | required | float | น้ำหนักพัสดุ (g) |
 
