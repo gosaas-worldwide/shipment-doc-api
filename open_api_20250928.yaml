@@ -599,7 +599,7 @@ paths:
 
         | box_weight |  | integer | น้ำหนัก (g) |
 
-        | cod_account |  | string |  |
+        | cod_account |  | integer |  |
 
         | cod_amount |  | integer | จำนวน COD |
 
